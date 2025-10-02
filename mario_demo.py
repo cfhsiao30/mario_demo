@@ -1,5 +1,3 @@
-# app.py
-# -*- coding: utf-8 -*-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -9,15 +7,14 @@ from collections import Counter
 st.set_page_config(page_title="🕹️ Mario 互動魔法鏡 ", layout="wide")
 
 st.title("🕹️ Mario 互動魔法鏡 — 旅遊評論互動儀表板 ")
-st.write("歡迎來到 Mario 互動魔法鏡，這裡以尼泊爾旅遊景點原始評論資料經過數據探勘、視覺化處理後的圖像作為Demo示範，歡迎您體驗。資料來源：Kaggle")
-
+st.write("歡迎來到 Mario 互動魔法鏡，這裡以尼泊爾旅遊景點原始評論資料經過數據探勘、視覺化處理後的圖像作為Demo示範，歡迎您體驗。請透過側邊欄選擇景點，即時看到情緒地圖分布與關鍵字。資料來源：Kaggle上的Tourist Review Sentiment Analysis")
 
 # --------------------------
-# Step 1️⃣ 載入資料
+# 載入資料
 # --------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("C:\\Users\\user\\Desktop\\玩AI\\Project_Travel\\Day15：merged_data_place.csv")
+    df = pd.read_csv("merged_data_place.csv")
     # 確保 review_tokens 為 list
     if df['review_tokens'].dtype == 'O':
         df['review_tokens'] = df['review_tokens'].apply(eval)
@@ -26,7 +23,7 @@ def load_data():
 df = load_data()
 
 # --------------------------
-# Step 2️⃣ 側邊欄篩選
+# 側邊欄篩選
 # --------------------------
 places = df['place'].unique().tolist()
 selected_place = st.sidebar.multiselect("選擇景點", options=places, default=places[:10])
@@ -35,7 +32,7 @@ selected_place = st.sidebar.multiselect("選擇景點", options=places, default=
 df_filtered = df[df['place'].isin(selected_place)]
 
 # --------------------------
-# Step 3️⃣ 計算情緒分布與關鍵字
+# 計算情緒分布與關鍵字
 # --------------------------
 # 情緒計數
 emotion_counts = df_filtered.groupby(['place','sentiment']).size().unstack(fill_value=0)
@@ -79,7 +76,17 @@ emotion_map = emotion_map.rename(columns={
 emotion_map['positive_ratio'] = emotion_map.get('positive', 0) / emotion_map['total_reviews']
 
 # --------------------------
-# Step 4️⃣ 顯示互動氣泡圖
+# 顯示統計摘要
+# --------------------------
+
+st.subheader("🔍 統計摘要""：")
+
+positive_reviews = df_filtered[df_filtered['sentiment']=='positive'].shape[0]
+st.write(""f"選擇景點數: {df_filtered['place'].nunique()}""、"f"合計評論數: {df_filtered.shape[0]}""、"f"好評比例: {positive_reviews / df_filtered.shape[0]:.2%}")
+
+
+# --------------------------
+# 顯示互動氣泡圖
 # --------------------------
 st.subheader("🌍 景點情緒氣泡圖")
 
@@ -102,7 +109,7 @@ fig_map = px.scatter_mapbox(
 st.plotly_chart(fig_map, use_container_width=True)
 
 # --------------------------
-# Step 5️⃣ 顯示表格
+# 顯示表格
 # --------------------------
 st.subheader("📊 景點情緒統計表")
 st.dataframe(emotion_map[[
@@ -111,20 +118,11 @@ st.dataframe(emotion_map[[
 ]].sort_values('total_reviews', ascending=False))
 
 
-# --------------------------
-# Step 6️⃣ 顯示統計摘要
-# --------------------------
-st.subheader("🔍 統計摘要")
-st.write(f"總共評論數: {df_filtered.shape[0]}")
-st.write(f"總共景點數: {df_filtered['place'].nunique()}")
-
-positive_reviews = df_filtered[df_filtered['sentiment']=='positive'].shape[0]
-st.write(f"正面評論比例: {positive_reviews / df_filtered.shape[0]:.2%}")
 
 # ============================
-# 📌 Day14 - 每個景點 Top 10 詞頻圖
+# 顯示詞頻圖
 # ============================
-st.subheader("各景點熱門關鍵字 (Top 10)")
+st.subheader("📖 景點熱門關鍵字")
 
 # 讓使用者選擇景點
 places = df_filtered['place'].unique()
